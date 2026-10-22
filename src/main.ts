@@ -139,13 +139,12 @@ async function boot(): Promise<void> {
       return undefined
     }
   }
-  const [gardenMusic, nightAmbience, tulipPick, bunnyFeed] = await Promise.all([
+  const gardenAudioPromise = Promise.all([
     loadSound('garden music', AUDIO_URLS.music),
     loadSound('night garden ambience', AUDIO_URLS.ambience),
     loadSound('tulip picking sound', AUDIO_URLS.pick),
     loadSound('bunny feeding sound', AUDIO_URLS.feed),
   ])
-  audio.setGardenAudio({ music: gardenMusic, ambience: nightAmbience, pick: tulipPick, feed: bunnyFeed })
   await physics.initPhysics()
   ui.setBootProgress(0.96)
   if (firstRun) {
@@ -182,6 +181,9 @@ async function boot(): Promise<void> {
     tulip: tulipModel?.scene,
   })
   game.reducedMotion = save.data.reducedMotion
+  void gardenAudioPromise.then(([gardenMusic, nightAmbience, tulipPick, bunnyFeed]) => {
+    audio.setGardenAudio({ music: gardenMusic, ambience: nightAmbience, pick: tulipPick, feed: bunnyFeed })
+  })
   if (import.meta.env.DEV) {
     const [{ registerGameTuning }, { tuning }] = await Promise.all([
       import('../scripts/manus-tuning/adapter.js'), import('./game/tuning'),

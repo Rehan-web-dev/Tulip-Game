@@ -2,4 +2,3 @@ node_modules/
 dist/
 shots/
 /.manus-webdev/preview-identity.json
-/assets/share/favicon.png

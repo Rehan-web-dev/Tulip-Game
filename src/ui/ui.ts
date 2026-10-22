@@ -6,7 +6,7 @@ import { CONFIG } from '../game/config'
 import type { Compass, Hint } from '../game/game'
 import { formatClock, stars, type RunState } from '../game/rules'
 
-const FAVICON_URL = new URL('../../assets/share/favicon.png', import.meta.url).href
+const FAVICON_URL = './favicon.png'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'letter' | 'settings' | 'leaderboard' | 'results'
 
