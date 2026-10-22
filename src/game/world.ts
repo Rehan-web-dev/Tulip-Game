@@ -120,7 +120,13 @@ export class World {
   private letterLight: THREE.PointLight | undefined
   private readonly candleFlames: { mesh: THREE.Mesh; light: THREE.PointLight }[] = []
   private readonly swingPivot = new THREE.Group()
+  private swingOccupied = false
   private readonly fallingLeaves: FallingLeaf[] = []
+  private readonly houseDoor = new THREE.Group()
+  private houseDoorCollider: ReturnType<Physics['addStaticBox']> | undefined
+  private houseDoorOpen = false
+  private houseDoorTarget = 0
+  private houseDoorWasInside = false
   readonly swingSeatPosition = new THREE.Vector3(7.65, 1.95, -21.62)
 
   constructor(private readonly physics: Physics, shadowMapSize: number, beastBoyModel?: THREE.Object3D, tulipModel?: THREE.Object3D) {
@@ -180,11 +186,15 @@ export class World {
     this.collectibles.animate(dt)
     this.drones.animate(dt, this.droneRage)
     const insideHouse = Math.abs(focus.x) < 4.55 && focus.z > -26.5 && focus.z < -19.55
+    if (insideHouse && !this.houseDoorWasInside && this.houseDoorOpen) this.toggleHouseDoor()
+    this.houseDoorWasInside = insideHouse
     // Keep the roof stable while crossing the doorway. Toggling the whole roof at the
     // threshold caused a visible pop and exposed the sky through the cottage.
     if (this.houseRoof) this.houseRoof.visible = true
     this.scene.userData.houseInteriorActive = insideHouse
-    this.swingPivot.rotation.x = Math.sin(this.elapsed * 1.15) * 0.065
+    const swingSpeed = this.swingOccupied ? 1.35 : 1.15
+    const swingAmplitude = this.swingOccupied ? 0.075 : 0.065
+    this.swingPivot.rotation.x = Math.sin(this.elapsed * swingSpeed) * swingAmplitude
     for (const leaf of this.fallingLeaves) {
       const cycle = (this.elapsed * leaf.speed + leaf.phase * 4.5) % 9.2
       const falling = cycle < 3.2
@@ -217,6 +227,7 @@ export class World {
     this.sun.target.position.copy(focus)
     this.nightSky.position.set(focus.x, 0, focus.z)
     this.npc.position.y = Math.sin(this.elapsed * 2.1) * 0.035
+    this.houseDoor.rotation.y += (this.houseDoorTarget - this.houseDoor.rotation.y) * Math.min(1, dt * 8)
     for (const bunny of this.rabbits) {
       const t = this.elapsed * bunny.speed + bunny.phase
       const fed = this.elapsed < bunny.fedUntil
@@ -291,6 +302,28 @@ export class World {
     return Math.hypot(position.x - this.birthdayLetterPosition.x, position.z - this.birthdayLetterPosition.z) < maxDistance
   }
 
+  isNearHouseDoor(position: THREE.Vector3, maxDistance: number): boolean {
+    return Math.hypot(position.x, position.z - (-18.95)) < maxDistance
+  }
+
+  toggleHouseDoor(): boolean {
+    this.houseDoorOpen = !this.houseDoorOpen
+    this.houseDoorTarget = this.houseDoorOpen ? -Math.PI * 0.52 : 0
+    if (this.houseDoorOpen) {
+      if (this.houseDoorCollider) {
+        this.physics.world.removeCollider(this.houseDoorCollider, true)
+        this.houseDoorCollider = undefined
+      }
+    } else {
+      this.houseDoorCollider = this.physics.addStaticBox(
+        new THREE.Vector3(0, 1.45, -18.96),
+        new THREE.Vector3(1.8, 2.8, 0.3),
+      )
+    }
+    this.scene.userData.houseDoorOpen = this.houseDoorOpen
+    return this.houseDoorOpen
+  }
+
   isNearBoundary(position: THREE.Vector3): boolean {
     return Math.abs(position.x) > 39.5 || Math.abs(position.z) > 39.5
   }
@@ -301,6 +334,10 @@ export class World {
     target.y += 6.28 * (1 - Math.cos(swingAngle)) + 0.83
     target.z += -6.28 * Math.sin(swingAngle)
     return target
+  }
+
+  setSwingOccupied(occupied: boolean): void {
+    this.swingOccupied = occupied
   }
 
   markBirthdayLetterRead(): void {
@@ -318,6 +355,8 @@ export class World {
   resetRun(): void {
     this.collectibles.reset()
     this.droneRage = false
+    if (this.houseDoorOpen) this.toggleHouseDoor()
+    this.houseDoorWasInside = false
     this.scene.userData.collectiblesRemaining = this.collectibles.total
   }
 
@@ -515,7 +554,10 @@ export class World {
     const wall = new THREE.MeshStandardMaterial({ color: '#fff1d9', roughness: 0.92 })
     const trim = new THREE.MeshStandardMaterial({ color: '#be715e', roughness: 0.86 })
     const roof = new THREE.MeshStandardMaterial({ color: '#a64c57', roughness: 0.9 })
-    const wood = new THREE.MeshStandardMaterial({ color: '#75513e', roughness: 0.96 })
+    const doorWood = new THREE.MeshStandardMaterial({ color: '#8e5842', roughness: 0.86 })
+    const doorTrim = new THREE.MeshStandardMaterial({ color: '#f0bd72', roughness: 0.68 })
+    const wreathGreen = new THREE.MeshStandardMaterial({ color: '#4d8c55', roughness: 0.9 })
+    const wreathFlower = new THREE.MeshStandardMaterial({ color: '#ef7898', roughness: 0.72 })
     const glass = new THREE.MeshStandardMaterial({ color: '#ffe4a1', emissive: '#ff9d35', emissiveIntensity: 1.15, roughness: 0.35, metalness: 0.05 })
     const cx = 0, cz = -23
     let solidWallColliderCount = 0
@@ -565,9 +607,53 @@ export class World {
     this.scene.add(roofGroup)
     this.houseRoof = roofGroup
     wallBox(cx + 3.2, 5.1, cz - 2.4, 0.8, 2.5, 0.8, false, trim)
-    wallBox(cx, 1.45, cz + 4.04, 1.8, 2.8, 0.16, false, wood)
-    const doorKnob = mesh(new THREE.SphereGeometry(0.07, 8, 6), '#e4bb57', [0.62, 1.45, cz + 4.15])
-    this.scene.add(doorKnob)
+    this.houseDoor.position.set(cx - 0.9, 0, cz + 4.04)
+    this.houseDoor.name = 'Animated cottage front door'
+    this.scene.add(this.houseDoor)
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.8, 0.16), doorWood)
+    door.position.set(0.9, 1.45, 0)
+    door.castShadow = true
+    door.receiveShadow = true
+    this.houseDoor.add(door)
+    door.name = 'Decorated cottage front door'
+    for (const y of [0.55, 1.2, 1.85, 2.5]) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.045, 0.035), doorTrim)
+      plank.position.set(0.9, y, 0.11)
+      this.houseDoor.add(plank)
+    }
+    for (const x of [-0.92, 0.92]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.12, 0.22), doorTrim)
+      post.position.set(cx + x, 1.5, cz + 4.16)
+      this.scene.add(post)
+    }
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.2, 0.22), doorTrim)
+    lintel.position.set(cx, 3.04, cz + 4.16)
+    this.scene.add(lintel)
+    const doorKnob = mesh(new THREE.SphereGeometry(0.075, 8, 6), '#e4bb57', [0.62, 1.45, cz + 4.18])
+    doorKnob.position.set(0.62 + 0.9, 1.45, 0.14)
+    this.houseDoor.add(doorKnob)
+    const wreath = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.095, 8, 18), wreathGreen)
+    wreath.position.set(0.9, 2.18, 0.16)
+    this.houseDoor.add(wreath)
+    for (let i = 0; i < 6; i += 1) {
+      const flower = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), wreathFlower)
+      const angle = i / 6 * Math.PI * 2
+      flower.position.set(0.9 + Math.cos(angle) * 0.42, 2.18 + Math.sin(angle) * 0.42, 0.18)
+      this.houseDoor.add(flower)
+    }
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 1.15), roof)
+    canopy.position.set(cx, 3.25, cz + 4.42)
+    canopy.rotation.x = -0.16
+    canopy.castShadow = true
+    this.scene.add(canopy)
+    for (const x of [-1.05, 1.05]) {
+      const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.38, 0.2), doorTrim)
+      lantern.position.set(cx + x, 2.82, cz + 4.3)
+      this.scene.add(lantern)
+      const light = new THREE.PointLight('#ffc56d', 0.48, 4.5, 2)
+      light.position.set(cx + x, 2.82, cz + 4.38)
+      this.scene.add(light)
+    }
 
     for (const x of [-3.1, 3.1]) {
       const window = new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.1, 0.09), glass)
@@ -595,6 +681,8 @@ export class World {
     this.scene.userData.houseWallColliderCount = solidWallColliderCount
     this.scene.userData.houseWallsSolid = solidWallColliderCount === 6
     this.scene.userData.houseDoorwayWidth = 4.8
+    this.houseDoorCollider = this.physics.addStaticBox(new THREE.Vector3(0, 1.45, -18.96), new THREE.Vector3(1.8, 2.8, 0.3))
+    this.scene.userData.houseDoorOpen = false
   }
 
   private makeHouseInterior(): void {
@@ -988,9 +1076,21 @@ export class World {
   private makeTrees(random: () => number): void {
     const bark = new THREE.MeshStandardMaterial({ color: '#302018', roughness: 1 })
     const leaves = ['#8f4a1d', '#b06a1d', '#76241f', '#a13b20', '#5f261e'].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.94 }))
-    for (const [x, z] of [[-35, -19], [34, -13], [-39, 20], [37, 25], [-23, 37], [20, 40], [40, -37], [-40, -38]] as const) {
+    const positions: Array<readonly [number, number]> = [
+      [-35, -19], [34, -13], [-39, 20], [37, 25], [-23, 37], [20, 40], [40, -37], [-40, -38],
+      [-33, 5], [31, 8], [-14, 39], [7, 40], [-38, -6], [39, 8], [-30, -35], [29, -31],
+      [-13, 34], [34, 36], [-39, 34], [39, -20],
+    ]
+    let placed = 0
+    for (const [x, z] of positions) {
+      if (
+        isOnGardenPath(x, z, 3.2)
+        || Math.hypot(x, z + 23) < 11
+        || Math.hypot(x - 10.2, z + 21.8) < 10
+      ) continue
       const tree = new THREE.Group()
       tree.position.set(x, 0, z)
+      tree.scale.setScalar(0.9 + random() * 0.3)
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.48, 4.4, 7), bark)
       trunk.position.y = 2.2
       trunk.castShadow = true
@@ -1004,7 +1104,9 @@ export class World {
       }
       this.scene.add(tree)
       this.physics.addStaticCylinder(new THREE.Vector3(x, 1.4, z), 0.34, 2.8)
+      placed += 1
     }
+    this.scene.userData.autumnGardenTreeCount = placed
   }
 
   private makeBoundary(random: () => number): void {

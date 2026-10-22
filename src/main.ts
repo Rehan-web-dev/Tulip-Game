@@ -19,7 +19,8 @@ const MODEL_URLS = {
   tulip: new URL('../assets/models/tulip-optimized.glb', import.meta.url).href,
 }
 const AUDIO_URLS = {
-  music: new URL('../assets/audio/garden-at-night.mp3', import.meta.url).href,
+  music: new URL('../assets/audio/Background.mp3', import.meta.url).href,
+  birthday: new URL('../assets/audio/birthdaysong.mp3', import.meta.url).href,
   ambience: new URL('../assets/audio/night-garden-ambience.mp3', import.meta.url).href,
   pick: new URL('../assets/audio/tulip-pick.mp3', import.meta.url).href,
   feed: new URL('../assets/audio/bunny-feed.mp3', import.meta.url).href,
@@ -142,6 +143,7 @@ async function boot(): Promise<void> {
   }
   const gardenAudioPromise = Promise.all([
     loadSound('garden music', AUDIO_URLS.music),
+    loadSound('birthday song', AUDIO_URLS.birthday),
     loadSound('night garden ambience', AUDIO_URLS.ambience),
     loadSound('tulip picking sound', AUDIO_URLS.pick),
     loadSound('bunny feeding sound', AUDIO_URLS.feed),
@@ -184,8 +186,8 @@ async function boot(): Promise<void> {
     tulip: tulipModel?.scene,
   })
   game.reducedMotion = save.data.reducedMotion
-  void gardenAudioPromise.then(([gardenMusic, nightAmbience, tulipPick, bunnyFeed]) => {
-    audio.setGardenAudio({ music: gardenMusic, ambience: nightAmbience, pick: tulipPick, feed: bunnyFeed })
+  void gardenAudioPromise.then(([gardenMusic, birthday, nightAmbience, tulipPick, bunnyFeed]) => {
+    audio.setGardenAudio({ music: gardenMusic, birthday, ambience: nightAmbience, pick: tulipPick, feed: bunnyFeed })
   })
   if (import.meta.env.DEV) {
     const [{ registerGameTuning }, { tuning }] = await Promise.all([

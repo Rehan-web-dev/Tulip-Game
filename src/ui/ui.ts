@@ -6,7 +6,7 @@ import { CONFIG } from '../game/config'
 import type { Compass, Hint } from '../game/game'
 import { formatClock, stars, type RunState } from '../game/rules'
 
-const FAVICON_URL = './favicon.png'
+const GAME_LOGO_URL = './dua-adventure-logo.jpg'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'letter' | 'settings' | 'leaderboard' | 'results'
 
@@ -501,7 +501,7 @@ export class Ui {
       `<div class="row"><span data-i18n="${label}"></span><button data-nav class="toggle" data-setting="${setting}" aria-pressed="false"><i></i><span></span></button></div>`
     return /* html */ `
 <section class="screen screen-boot is-active" data-screen="boot">
-  <img class="boot-icon" src="${FAVICON_URL}" alt="" />
+  <img class="boot-icon" src="${GAME_LOGO_URL}" alt="Dua's Adventure" />
   <div class="boot-logo" data-i18n="game.title"></div>
   <div class="boot-bar"><i></i></div>
   <div class="boot-label" data-i18n="boot.loading"></div>
@@ -511,11 +511,16 @@ export class Ui {
   <div class="title-vignette"></div>
   <div class="title-best is-hidden"></div>
   <div class="title-block">
-    <div class="logo">
-      <span class="logo-gem" aria-hidden="true"><svg viewBox="0 0 72 82" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M36 48C17 47 9 33 15 16c10 2 17 9 21 19 4-10 11-17 21-19 6 17-2 31-21 32Z" fill="#f277a1" stroke="#342447" stroke-width="4" stroke-linejoin="round"/><path d="M36 43c-10-11-10-25 0-37 10 12 10 26 0 37Z" fill="#ffd35c" stroke="#342447" stroke-width="4" stroke-linejoin="round"/><path d="M36 47v28m0-13c-8-10-16-9-20-7m20 6c7-10 15-9 20-7" stroke="#4d8c55" stroke-width="5" stroke-linecap="round"/></svg></span>
-      <h1 class="logo-text" data-i18n="game.title"></h1>
-    </div>
+    <div class="logo"><img class="game-logo" src="${GAME_LOGO_URL}" alt="Dua's Adventure" /></div>
     <p class="tagline" data-i18n="game.tagline"></p>
+    <div class="destination-card">
+      <span class="destination-icon" aria-hidden="true">✦</span>
+      <div>
+        <small data-i18n="destination.label"></small>
+        <strong data-i18n="destination.forest"></strong>
+        <span data-i18n="destination.goal"></span>
+      </div>
+    </div>
     <nav class="menu">
       <button data-nav class="btn btn-primary" data-action="play"><span data-i18n="menu.play"></span></button>
       <button data-nav class="btn" data-action="settings"><span data-i18n="menu.settings"></span></button>

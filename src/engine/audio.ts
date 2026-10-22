@@ -2,7 +2,7 @@
  * Web Audio mixer with saved Music and SFX buses. Browsers only allow sound after a user gesture,
  * so unlock() is called by the title/menu actions before playback begins.
  */
-export type Sfx = 'pickup' | 'jump' | 'land' | 'hurt' | 'ui' | 'win' | 'lose' | 'dash'
+export type Sfx = 'pickup' | 'jump' | 'land' | 'hurt' | 'ui' | 'win' | 'lose' | 'dash' | 'birthday'
 export type GardenSfx = 'pick' | 'feed'
 
 export class Audio {
@@ -12,9 +12,12 @@ export class Audio {
   private sfx: GainNode
   private musicTimer = 0
   private musicOn = false
+  private birthdayTimer = 0
+  private birthdayPlaying = false
+  private musicLevel = 0.55
   private buffers = new Map<string, AudioBuffer>()
   private musicSources: AudioBufferSourceNode[] = []
-  private gardenBuffers: { music?: AudioBuffer; ambience?: AudioBuffer; pick?: AudioBuffer; feed?: AudioBuffer } = {}
+  private gardenBuffers: { music?: AudioBuffer; birthday?: AudioBuffer; ambience?: AudioBuffer; pick?: AudioBuffer; feed?: AudioBuffer } = {}
 
   constructor() {
     this.ctx = new AudioContext()
@@ -24,6 +27,30 @@ export class Audio {
     this.music.connect(this.master)
     this.sfx.connect(this.master)
     this.master.connect(this.ctx.destination)
+  }
+
+  /** Play the supplied birthday song while suspending the looping garden bed for 15 seconds. */
+  playBirthdaySong(): void {
+    if (this.ctx.state !== 'running') return
+    const buffer = this.gardenBuffers.birthday
+    if (!buffer) {
+      this.play('birthday')
+      return
+    }
+    clearTimeout(this.birthdayTimer)
+    this.birthdayPlaying = true
+    this.music.gain.setTargetAtTime(0, this.ctx.currentTime, 0.04)
+    const source = this.playBuffer(buffer, 'sfx', false, 1)
+    const finish = () => {
+      if (!this.birthdayPlaying) return
+      this.birthdayPlaying = false
+      this.birthdayTimer = 0
+      this.music.gain.setTargetAtTime(this.musicOn ? this.musicLevel : 0, this.ctx.currentTime, 0.12)
+    }
+    this.birthdayTimer = window.setTimeout(() => {
+      try { source.stop() } catch { /* already ended */ }
+      finish()
+    }, 15_000)
   }
 
   unlock(): void {
@@ -46,7 +73,8 @@ export class Audio {
   /** Volumes in 0..1. Both generated beds use the Music bus; interactions use SFX. */
   setVolumes(music: number, sfx: number, muted = false): void {
     const t = this.ctx.currentTime
-    this.music.gain.setTargetAtTime(muted ? 0 : music * 0.55, t, 0.05)
+    this.musicLevel = muted ? 0 : music * 0.55
+    this.music.gain.setTargetAtTime(this.birthdayPlaying ? 0 : this.musicLevel, t, 0.05)
     this.sfx.gain.setTargetAtTime(muted ? 0 : sfx * 0.8, t, 0.05)
   }
 
@@ -61,7 +89,7 @@ export class Audio {
     return buffer
   }
 
-  setGardenAudio(buffers: { music?: AudioBuffer; ambience?: AudioBuffer; pick?: AudioBuffer; feed?: AudioBuffer }): void {
+  setGardenAudio(buffers: { music?: AudioBuffer; birthday?: AudioBuffer; ambience?: AudioBuffer; pick?: AudioBuffer; feed?: AudioBuffer }): void {
     this.gardenBuffers = buffers
   }
 
@@ -108,6 +136,7 @@ export class Audio {
       case 'dash': tone(500, 180, 0.18, 'sawtooth', 0.1); break
       case 'win': [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, 0.3, 'triangle', 0.25, i * 0.11)); break
       case 'lose': [392, 330, 262].forEach((f, i) => tone(f, f * 0.98, 0.38, 'sine', 0.25, i * 0.16)); break
+      case 'birthday': [392, 392, 440, 392, 523, 494, 392, 392, 440, 392, 587, 523].forEach((f, i) => tone(f, f * 1.01, 0.2, 'triangle', 0.2, i * 0.21)); break
     }
   }
 

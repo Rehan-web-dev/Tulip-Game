@@ -16,7 +16,7 @@ import { advanceLetterQuest, INITIAL_LETTER_QUEST_STATE, type LetterQuestState }
 import { World } from './world'
 
 export type Mode = 'attract' | 'playing' | 'paused' | 'ended'
-export type Hint = 'move' | 'look' | 'jump' | 'dash' | 'talk' | 'pick' | 'feed' | 'swing' | 'edge' | 'garden' | 'cores' | 'letter' | ForestPrompt
+export type Hint = 'move' | 'look' | 'jump' | 'dash' | 'talk' | 'pick' | 'feed' | 'swing' | 'edge' | 'garden' | 'cores' | 'letter' | 'door' | ForestPrompt
 export type LevelId = 'forest' | 'garden'
 export type Compass = { angle: number; distance: number; rise: number }
 
@@ -230,6 +230,16 @@ export class Game {
       return
     }
 
+    if (this.world.isNearHouseDoor(pos, 3.1)) {
+      this.setHint('door')
+      if (interactPressed) {
+        const open = this.world.toggleHouseDoor()
+        this.audio.play('ui')
+        this.hooks.popup(open ? 'The cottage door is open.' : 'The cottage door is closed.', this.project(new THREE.Vector3(0, 2.5, -18.9)), 'score')
+      }
+      return
+    }
+
     const horizontalDistance = (a: THREE.Vector3, b: THREE.Vector3) => Math.hypot(a.x - b.x, a.z - b.z)
     const tulip = this.world.nearestPickableTulip(pos, 3.2)
     const bunny = this.world.nearestFeedableBunny(pos, 3.5)
@@ -238,8 +248,13 @@ export class Game {
     if (swingDistance < 2.8 || this.player.isSeatedOnSwing) {
       this.setHint('swing')
       if (interactPressed) {
-        if (this.player.isSeatedOnSwing) this.player.standFromSwing()
-        else this.player.sitOnSwing(this.world.swingSeatPosition, this.cam.yaw)
+        if (this.player.isSeatedOnSwing) {
+          this.player.standFromSwing()
+          this.world.setSwingOccupied(false)
+        } else {
+          this.player.sitOnSwing(this.world.swingSeatPosition, this.cam.yaw)
+          this.world.setSwingOccupied(true)
+        }
         this.audio.play('ui')
       }
       return
@@ -284,10 +299,13 @@ export class Game {
     this.time += frameSeconds
     this.physics.sync(alpha)
     const target = this.player.root.position
+    this.forest.setTitlePresentation(this.mode === 'attract')
     if (this.mode === 'attract') {
-      const t = this.time * 0.045 + 0.85
-      this.cam.camera.position.set(Math.sin(t) * 47, 24 + Math.sin(this.time * 0.18) * 1.2, -5 + Math.cos(t) * 47)
-      this.cam.camera.lookAt(0, 2, -6)
+      // Keep the title panorama alive without making the menu feel like it is spinning.
+      const t = this.time * 0.014 + 0.85
+      const forestCenter = new THREE.Vector3(142, 0, 0)
+      this.cam.camera.position.set(forestCenter.x + Math.sin(t) * 47, 24 + Math.sin(this.time * 0.08) * 0.7, forestCenter.z - 5 + Math.cos(t) * 47)
+      this.cam.camera.lookAt(forestCenter.x, 2, forestCenter.z - 6)
     } else {
       const look = this.mode === 'playing' ? this.input.takeLook() : { x: 0, y: 0 }
       this.cam.update(target, look, frameSeconds, false, this.reducedMotion)
@@ -318,7 +336,7 @@ export class Game {
         this.transitioning = false
       }
     }
-    this.renderer.render(this.activeScene, this.cam.camera)
+    this.renderer.render(this.mode === 'attract' ? this.forest.scene : this.activeScene, this.cam.camera)
   }
 
   private applyGardenRunEvents(pos: THREE.Vector3): void {
@@ -418,7 +436,8 @@ export class Game {
     this.letterQuest = advanceLetterQuest(this.letterQuest, 'read-letter')
     if (!wasRead) this.world.markBirthdayLetterRead()
     this.hooks.quest('quest.letter.done')
-    this.audio.play('ui')
+    if (wasRead) this.audio.play('ui')
+    else this.audio.playBirthdaySong()
     this.hooks.openLetter()
   }
 

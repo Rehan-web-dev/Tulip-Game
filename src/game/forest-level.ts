@@ -29,28 +29,33 @@ export class ForestLevel {
   private gateOpening = false
   private gateOpenTime = 0
   private elapsed = 0
+  private readonly hemisphereLight: THREE.HemisphereLight
+  private readonly moonlight: THREE.DirectionalLight
+  private titlePresentation = false
 
   constructor(private readonly physics: Physics, shadowMapSize: number) {
     this.scene.background = new THREE.Color('#07101b')
     this.scene.fog = new THREE.FogExp2('#101e2b', 0.014)
-    this.scene.add(new THREE.HemisphereLight('#a9bce2', '#253135', 0.96))
+    this.hemisphereLight = new THREE.HemisphereLight('#a9bce2', '#253135', 0.96)
+    this.scene.add(this.hemisphereLight)
     this.relocateKey()
 
-    const moonlight = new THREE.DirectionalLight('#d0ddff', 1.72)
-    moonlight.position.set(CENTER_X - 26, 36, -22)
-    moonlight.castShadow = true
-    moonlight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
-    moonlight.shadow.camera.left = moonlight.shadow.camera.bottom = -58
-    moonlight.shadow.camera.right = moonlight.shadow.camera.top = 58
-    moonlight.shadow.camera.near = 1
-    moonlight.shadow.camera.far = 110
-    moonlight.shadow.bias = -0.0005
-    this.scene.add(moonlight, moonlight.target)
-    moonlight.target.position.set(CENTER_X, 0, 0)
+    this.moonlight = new THREE.DirectionalLight('#d0ddff', 1.72)
+    this.moonlight.position.set(CENTER_X - 26, 36, -22)
+    this.moonlight.castShadow = true
+    this.moonlight.shadow.mapSize.set(shadowMapSize, shadowMapSize)
+    this.moonlight.shadow.camera.left = this.moonlight.shadow.camera.bottom = -58
+    this.moonlight.shadow.camera.right = this.moonlight.shadow.camera.top = 58
+    this.moonlight.shadow.camera.near = 1
+    this.moonlight.shadow.camera.far = 110
+    this.moonlight.shadow.bias = -0.0005
+    this.scene.add(this.moonlight, this.moonlight.target)
+    this.moonlight.target.position.set(CENTER_X, 0, 0)
 
     this.makeMoonAndStars()
     this.makeTerrain()
     this.makeTrail()
+    this.makeForestLamps()
     this.makeForest()
     this.makeMushroomsAndFerns()
     this.makeForestKey()
@@ -62,6 +67,28 @@ export class ForestLevel {
     this.scene.userData.gateName = 'Garden Gate'
     this.scene.userData.starShapeCount = 52
     this.scene.userData.questState = this.state
+  }
+
+  setTitlePresentation(active: boolean): void {
+    if (this.titlePresentation === active) return
+    this.titlePresentation = active
+    if (active) {
+      this.scene.background = new THREE.Color('#15234a')
+      ;(this.scene.fog as THREE.FogExp2).color.set('#1d3554')
+      ;(this.scene.fog as THREE.FogExp2).density = 0.009
+      this.hemisphereLight.color.set('#d9c7ff')
+      this.hemisphereLight.groundColor.set('#35435f')
+      this.hemisphereLight.intensity = 1.2
+      this.moonlight.intensity = 2.2
+    } else {
+      this.scene.background = new THREE.Color('#07101b')
+      ;(this.scene.fog as THREE.FogExp2).color.set('#101e2b')
+      ;(this.scene.fog as THREE.FogExp2).density = 0.014
+      this.hemisphereLight.color.set('#a9bce2')
+      this.hemisphereLight.groundColor.set('#253135')
+      this.hemisphereLight.intensity = 0.96
+      this.moonlight.intensity = 1.72
+    }
   }
 
   prompt(position: THREE.Vector3): ForestPrompt | null {
@@ -218,20 +245,27 @@ export class ForestLevel {
     sky.add(stars)
     this.scene.add(sky)
 
-    const moonGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(3.5, 24, 18),
-      new THREE.MeshBasicMaterial({ color: '#d7e4ff', transparent: true, opacity: 0.075, fog: false, depthWrite: false }),
+    const moonPosition = new THREE.Vector3(CENTER_X - 22, 16, -35)
+    const moonHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(5.8, 24, 18),
+      new THREE.MeshBasicMaterial({ color: '#9fbaff', transparent: true, opacity: 0.08, fog: false, depthWrite: false }),
     )
-    moonGlow.position.set(CENTER_X - 22, 10.5, -35)
+    moonHalo.position.copy(moonPosition)
+    this.scene.add(moonHalo)
+    const moonGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(3.8, 24, 18),
+      new THREE.MeshBasicMaterial({ color: '#c6d8ff', transparent: true, opacity: 0.16, fog: false, depthWrite: false }),
+    )
+    moonGlow.position.copy(moonPosition)
     this.scene.add(moonGlow)
     const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(2, 24, 18),
-      new THREE.MeshBasicMaterial({ color: '#e7edff', fog: false, toneMapped: false }),
+      new THREE.SphereGeometry(2.45, 32, 24),
+      new THREE.MeshBasicMaterial({ color: '#fff8df', fog: false, toneMapped: false }),
     )
-    moon.position.copy(moonGlow.position)
+    moon.position.copy(moonPosition)
     this.scene.add(moon)
-    const moonLamp = new THREE.PointLight('#c6d5ff', 1.2, 42, 2)
-    moonLamp.position.copy(moon.position)
+    const moonLamp = new THREE.PointLight('#b8caff', 1.8, 52, 2)
+    moonLamp.position.copy(moonPosition)
     this.scene.add(moonLamp)
   }
 
@@ -283,6 +317,57 @@ export class ForestLevel {
       }
     }
   }
+
+  private makeForestLamps(): void {
+        const postMaterial = new THREE.MeshStandardMaterial({ color: '#3a2925', roughness: 0.92 })
+        const capMaterial = new THREE.MeshStandardMaterial({ color: '#c78a43', roughness: 0.55, metalness: 0.18 })
+        const glowMaterial = new THREE.MeshBasicMaterial({ color: '#ffd37a', toneMapped: false })
+        const postGeometry = new THREE.CylinderGeometry(0.075, 0.11, 1.65, 7)
+        const capGeometry = new THREE.CylinderGeometry(0.22, 0.16, 0.16, 8)
+        const glowGeometry = new THREE.SphereGeometry(0.13, 8, 6)
+        const lamps: Array<[THREE.Vector3, number]> = []
+        const addLamp = (position: THREE.Vector3, facing: number) => lamps.push([position, facing])
+        const addAlongPath = (start: THREE.Vector3, end: THREE.Vector3, count: number, side: number) => {
+          for (let i = 1; i <= count; i += 1) {
+            const t = i / (count + 1)
+            const x = THREE.MathUtils.lerp(start.x, end.x, t)
+            const z = THREE.MathUtils.lerp(start.z, end.z, t)
+            const dx = end.x - start.x
+            const dz = end.z - start.z
+            const length = Math.hypot(dx, dz)
+            addLamp(new THREE.Vector3(x + (-dz / length) * side * 1.45, 0, z + (dx / length) * side * 1.45), Math.atan2(dx, dz))
+          }
+        }
+        addAlongPath(this.spawn, this.keyPosition, 4, 1)
+        addAlongPath(this.keyPosition, this.gatePosition, 5, -1)
+
+        lamps.forEach(([position, facing], index) => {
+          const lamp = new THREE.Group()
+          lamp.position.copy(position)
+          lamp.rotation.y = facing
+          const post = new THREE.Mesh(postGeometry, postMaterial)
+          post.position.y = 0.825
+          post.castShadow = true
+          lamp.add(post)
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 0.08), postMaterial)
+          arm.position.set(0, 1.58, 0.12)
+          lamp.add(arm)
+          const cap = new THREE.Mesh(capGeometry, capMaterial)
+          cap.position.set(0, 1.48, 0.34)
+          lamp.add(cap)
+          const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+          glow.position.set(0, 1.34, 0.34)
+          lamp.add(glow)
+          this.scene.add(lamp)
+          // A few lights provide pools of warmth; the emissive lanterns keep the full trail bright cheaply.
+          if (index % 2 === 0) {
+            const light = new THREE.PointLight('#ffc56b', 0.7, 7, 1.8)
+            light.position.set(position.x, 1.35, position.z)
+            this.scene.add(light)
+          }
+        })
+        this.scene.userData.forestLampCount = lamps.length
+    }
 
   private makeForest(): void {
     const trunkGeometry = new THREE.CylinderGeometry(0.22, 0.48, 4.4, 7)

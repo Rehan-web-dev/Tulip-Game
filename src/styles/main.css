@@ -203,6 +203,15 @@ kbd.x { background: #3f8cff; }
 .screen-title.is-active .tagline { animation-delay: 0.08s; }
 .screen-title.is-active .menu { animation-delay: 0.16s; }
 .logo { display: flex; align-items: center; gap: 16px; }
+.game-logo {
+  display: block;
+  width: min(300px, 25vw);
+  max-height: 250px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 22px;
+  filter: drop-shadow(0 12px 20px rgba(8, 6, 27, 0.42));
+}
 .logo-gem { width: clamp(48px, 7vw, 76px); color: var(--gold); filter: drop-shadow(0 0 18px rgba(255, 190, 60, 0.8)) drop-shadow(4px 5px 0 var(--ink)); animation: bob 3s ease-in-out infinite; }
 .logo-text {
   margin: 0;
@@ -220,6 +229,40 @@ kbd.x { background: #3f8cff; }
 }
 :lang(zh-CN) .logo-text { font-style: normal; font-weight: 900; letter-spacing: 0.06em; -webkit-text-stroke: 0.004em var(--ink); filter: drop-shadow(0.04em 0.05em 0 var(--ink)); margin-bottom: 0.08em; }
 .tagline { margin: 0 0 18px; max-width: 30ch; font-size: clamp(15px, 1.6vw, 19px); font-weight: 600; opacity: 0.9; text-shadow: 0 2px 0 var(--ink); }
+.destination-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: min(410px, 42vw);
+  margin: -4px 0 2px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 211, 92, 0.55);
+  border-radius: 14px;
+  background: linear-gradient(110deg, rgba(27, 24, 56, 0.9), rgba(49, 44, 88, 0.72));
+  box-shadow: 0 10px 28px rgba(8, 6, 27, 0.26), inset 0 1px 0 rgba(255, 247, 232, 0.14);
+}
+.destination-icon {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 21px;
+  box-shadow: 0 0 18px rgba(255, 211, 92, 0.45);
+}
+.destination-card div { display: grid; gap: 2px; min-width: 0; }
+.destination-card small {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.destination-card strong { font-size: 19px; line-height: 1.1; }
+.destination-card span:not(.destination-icon) { font-size: 12px; opacity: 0.72; }
 .title-best {
   position: absolute;
   top: calc(22px + var(--safe-t));
@@ -426,9 +469,13 @@ body.has-touch .hint.is-active { transform: translate(-50%, 0); }
     gap: 12px;
   }
   .logo { justify-content: center; gap: 9px; max-width: 100%; }
+  .game-logo { width: min(210px, 52vw); max-height: 210px; border-radius: 16px; }
   .logo-gem { width: clamp(42px, 14vw, 62px); flex: 0 0 auto; }
   .logo-text { font-size: clamp(34px, 10vw, 58px); line-height: 0.95; }
   .tagline { max-width: 28ch; font-size: 14px; }
+  .destination-card { width: min(330px, 88vw); padding: 10px 12px; text-align: left; }
+  .destination-card strong { font-size: 17px; }
+  .destination-card span:not(.destination-icon) { font-size: 11px; }
   .menu { width: min(260px, 86vw); align-items: stretch; }
   .btn { width: 100%; min-width: 0; min-height: 52px; padding: 12px 18px; text-align: center; font-size: 17px; }
   .btn span { justify-content: center; }
@@ -458,15 +505,36 @@ body.has-touch .hint.is-active { transform: translate(-50%, 0); }
 
 /* ─── Tulip Hollow garden presentation ─────────────────────────────────── */
 .screen-boot {
-  background: #dcebd2;
-  color: #342447;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 241, 168, 0.96) 0%, rgba(255, 241, 168, 0.72) 16%, transparent 38%),
+    linear-gradient(145deg, #f8c4d7 0%, #d98fd0 46%, #6b2d83 100%);
+  color: #4b185f;
   gap: 16px;
 }
-.boot-icon { display: block; width: 82px; height: 82px; object-fit: contain; filter: drop-shadow(0 8px 8px rgba(53, 66, 49, 0.18)); }
-.boot-logo { color: #714b83; font-size: clamp(28px, 5vw, 48px); -webkit-text-stroke: 0.08em #fff7e8; }
-.boot-bar { background: #bed4b3; border-color: #78956c; }
-.boot-bar i { background: linear-gradient(90deg, #ee7da2, #ffd35c, #74ad68); }
-.boot-label { color: #4b6245; opacity: 1; letter-spacing: 0.16em; }
+.boot-icon {
+  display: block;
+  width: 82px;
+  height: 82px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  border: 3px solid rgba(113, 75, 131, 0.28);
+  filter: drop-shadow(0 8px 8px rgba(53, 66, 49, 0.18));
+}
+.boot-logo {
+  color: #741679;
+  font-family: 'Trebuchet MS', 'Arial Rounded MT Bold', var(--display);
+  font-size: clamp(28px, 5vw, 48px);
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  -webkit-text-stroke: 0.075em #fff4d0;
+  filter: drop-shadow(0 4px 0 rgba(85, 20, 102, 0.22));
+}
+.boot-bar { background: rgba(91, 36, 112, 0.26); border-color: rgba(83, 25, 103, 0.58); }
+.boot-bar i { background: linear-gradient(90deg, #ff6f9f, #ffd35c, #aee06d); }
+.boot-label { color: #54235f; opacity: 1; letter-spacing: 0.16em; text-shadow: 0 1px rgba(255, 244, 208, 0.7); }
 .logo-gem svg { display: block; width: 100%; height: auto; }
 .logo-text { font-size: clamp(42px, 7vw, 88px); }
 .tagline { max-width: 34ch; }
