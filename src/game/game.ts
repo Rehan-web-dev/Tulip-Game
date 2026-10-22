@@ -385,6 +385,8 @@ export class Game {
     this.activeLevel = level
     this.activeScene = level === 'forest' ? this.forest.scene : this.world.scene
     this.activeScene.add(this.player.root, this.player.shadowMesh, this.snowball, this.fx.mesh)
+    // Avoid forcing a full forest shader compile on mobile WebGL implementations.
+    if (level === 'forest' && !this.renderer.isLowQuality) this.renderer.prepare(this.forest.scene, this.cam.camera)
     const spawn = level === 'forest' ? this.forest.spawn : this.world.spawn
     this.player.teleport(spawn)
     this.player.setSafePosition(spawn)

@@ -29,6 +29,7 @@ async function boot(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('#game')!
   const firstRun = safeGet(SAVE_KEY) === null
   const save = new SaveStore()
+  const mobileDevice = matchMedia('(pointer: coarse)').matches
 
   const i18n = new I18n('en')
   const input = new Input(canvas)
@@ -152,7 +153,9 @@ async function boot(): Promise<void> {
     ui.refreshSettings()
   }
 
-  const renderer = new Renderer(canvas, save.data.quality)
+  // A saved desktop quality setting must not overload a phone when the same account
+  // is opened on mobile.
+  const renderer = new Renderer(canvas, mobileDevice ? 'low' : save.data.quality)
   game = new Game(renderer, input, audio, {
     popup: (text, at, kind) => ui.popup(text, at, kind),
     hurt: () => ui.hurt(),

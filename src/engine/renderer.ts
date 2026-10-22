@@ -37,16 +37,29 @@ export class Renderer {
   constructor(readonly canvas: HTMLCanvasElement, quality: Quality) {
     this.preset = QUALITY_PRESETS[quality]
     this.gl = new THREE.WebGLRenderer({ canvas, antialias: this.preset.antialias, powerPreference: 'high-performance' })
+    this.gl.setClearColor('#07101b', 1)
     this.gl.outputColorSpace = THREE.SRGBColorSpace
     this.gl.toneMapping = THREE.ACESFilmicToneMapping
     this.gl.toneMappingExposure = 1
     this.gl.shadowMap.type = THREE.PCFSoftShadowMap
     this.applyQuality(quality)
+    canvas.addEventListener('webglcontextlost', event => {
+      event.preventDefault()
+      console.warn('WebGL context was lost; waiting for the browser to restore it.')
+    })
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.gl.setClearColor('#07101b', 1)
+      this.applyQuality(quality)
+    })
     window.addEventListener('resize', () => this.resize())
   }
 
   get shadowMapSize(): number {
     return this.preset.shadowMap
+  }
+
+  get isLowQuality(): boolean {
+    return this.preset === QUALITY_PRESETS.low
   }
 
   applyQuality(quality: Quality): void {
