@@ -21,6 +21,13 @@ pnpm test     # unit tests (rules, save, i18n, garden layout, forest and letter 
 pnpm smoke    # after build: headless browser playthrough + screenshots in shots/
 ```
 
+## Netlify deployment
+
+The repository includes `netlify.toml` and uses a storage-independent build. In Netlify, import
+the GitHub repository and use the detected settings (or set `pnpm run build` as the build command
+and `dist` as the publish directory). The GLB files under `assets/models/` and `assets/Raven Movements/`
+must be committed to GitHub; the Manus storage restore script is not required for Netlify.
+
 ## Layout
 
 | Path | Role | Change it? |

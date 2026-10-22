@@ -2,12 +2,4 @@ node_modules/
 dist/
 shots/
 /.manus-webdev/preview-identity.json
-# Assets restored from assets.lock.json
-/assets/models/beast-boy.glb
-/assets/models/raven.glb
-/assets/models/snowball.glb
 /assets/share/favicon.png
-# Assets restored from assets.lock.json
-/assets/models/tulip.glb
-# Assets restored from assets.lock.json
-/assets/models/tulip-optimized.glb
