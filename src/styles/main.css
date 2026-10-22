@@ -307,6 +307,15 @@ kbd.x { background: #3f8cff; }
 .letter-kicker { color: #f5d69f; font: 800 11px var(--display); letter-spacing: 0.23em; text-transform: uppercase; text-align: center; }
 .letter-paper { width: 100%; padding: clamp(20px, 4vw, 34px); background: linear-gradient(155deg, #fff6df, #ecd9b1); border: 1px solid rgba(119, 75, 49, 0.38); box-shadow: inset 0 0 24px rgba(140, 94, 54, 0.1), 0 8px 18px rgba(10, 9, 16, 0.2); transform: rotate(-0.25deg); }
 .letter-copy { width: 100%; margin: 0; color: #49342d; font: 500 clamp(16px, 2.5vw, 20px)/1.65 var(--body); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.birthday-stickers {
+  display: block;
+  width: min(360px, 82vw);
+  height: auto;
+  margin: -4px auto -2px;
+  mix-blend-mode: screen;
+  filter: saturate(1.12) drop-shadow(0 5px 7px rgba(12, 8, 18, 0.24));
+  animation: stickerIn 0.55s cubic-bezier(0.2, 1.25, 0.4, 1) both;
+}
 .letter-controls { margin: 0; color: #e6d5b5; font-size: 13px; font-weight: 600; text-align: center; }
 
 /* Settings */
@@ -447,6 +456,7 @@ body.has-touch .hint.is-active { transform: translate(-50%, 0); }
 /* ─── Motion ───────────────────────────────────────────────────────────── */
 @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
 @keyframes pop { from { opacity: 0; transform: scale(0.86); } }
+@keyframes stickerIn { from { opacity: 0; transform: translateY(10px) scale(0.88) rotate(-2deg); } }
 @keyframes bob { 50% { transform: translateY(-6px) rotate(6deg); } }
 @keyframes pulse { 50% { transform: scale(1.05); } }
 @keyframes starIn { from { transform: scale(0) rotate(-40deg); opacity: 0; } }

@@ -582,6 +582,7 @@ export class Ui {
     <div class="letter-kicker" data-i18n="letter.kicker"></div>
     <h2 id="birthday-letter-title" class="modal-title" data-i18n="letter.title"></h2>
     <div class="letter-paper"><p class="letter-copy" data-i18n="letter.body"></p></div>
+    <img class="birthday-stickers" src="./birthday-stickers.jpeg" alt="" aria-hidden="true" />
     <p class="letter-controls" data-i18n="letter.controls"></p>
     <nav class="menu menu-row"><button data-nav class="btn btn-primary" data-action="close-letter"><span data-i18n="letter.close"></span></button></nav>
   </article>
