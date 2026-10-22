@@ -16,7 +16,9 @@ export const QUALITY_PRESETS: Record<Quality, Preset> = {
 export function suggestQuality(): Quality {
   const coarse = matchMedia('(pointer: coarse)').matches
   const cores = navigator.hardwareConcurrency ?? 4
-  if (coarse || cores <= 4) return 'medium'
+  // Mobile GPUs are much more sensitive to shadow maps and high DPR than desktop GPUs.
+  if (coarse) return 'low'
+  if (cores <= 4) return 'medium'
   return 'high'
 }
 

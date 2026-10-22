@@ -413,7 +413,34 @@ body.has-touch .hint.is-active { transform: translate(-50%, 0); }
 @keyframes banner { 0% { opacity: 0; transform: scale(1.4); } 12% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
 
 @media (max-width: 720px), (max-height: 520px) {
-  .btn { min-width: 220px; padding: 12px 24px; font-size: 18px; }
+  .screen-boot { padding: calc(18px + var(--safe-t)) calc(16px + var(--safe-r)) calc(18px + var(--safe-b)) calc(16px + var(--safe-l)); }
+  .boot-icon { width: 64px; height: 64px; }
+  .boot-logo { max-width: 92vw; text-align: center; font-size: clamp(25px, 8vw, 42px); }
+  .boot-label { font-size: 10px; letter-spacing: 0.12em; }
+  .title-block {
+    left: calc(14px + var(--safe-l));
+    right: calc(14px + var(--safe-r));
+    top: 47%;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+  .logo { justify-content: center; gap: 9px; max-width: 100%; }
+  .logo-gem { width: clamp(42px, 14vw, 62px); flex: 0 0 auto; }
+  .logo-text { font-size: clamp(34px, 10vw, 58px); line-height: 0.95; }
+  .tagline { max-width: 28ch; font-size: 14px; }
+  .menu { width: min(260px, 86vw); align-items: stretch; }
+  .btn { width: 100%; min-width: 0; min-height: 52px; padding: 12px 18px; text-align: center; font-size: 17px; }
+  .btn span { justify-content: center; }
+  .bottom-bar { padding: 10px calc(14px + var(--safe-r)) calc(10px + var(--safe-b)) calc(14px + var(--safe-l)); }
+  .touch-stick { left: 20%; top: auto; bottom: calc(76px + var(--safe-b)); }
+  .touch-jump { right: calc(18px + var(--safe-r)); bottom: calc(24px + var(--safe-b)); width: 82px; height: 82px; }
+  .touch-dash { right: calc(112px + var(--safe-r)); bottom: calc(28px + var(--safe-b)); width: 62px; height: 62px; }
+  .touch-talk { right: calc(22px + var(--safe-r)); bottom: calc(124px + var(--safe-b)); width: 62px; height: 62px; }
+  .garden-location { top: calc(12px + var(--safe-t)); left: calc(12px + var(--safe-l)); padding: 7px 12px; font-size: 11px; }
+  .hud-top-right { top: calc(10px + var(--safe-t)); right: calc(10px + var(--safe-r)); }
+  .hud-pause { width: 42px; height: 42px; padding: 9px; }
+  .btn { min-width: 0; padding: 12px 18px; font-size: 17px; }
   .hud-cores b { font-size: 26px; }
   .hud-clock b { font-size: 30px; }
   .hud-clock { min-width: 96px; }
