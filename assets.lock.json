@@ -1,0 +1,66 @@
+{
+  "version": 2,
+  "groups": {
+    "branding": {
+      "name": "Branding",
+      "order": 20
+    },
+    "characters": {
+      "name": "Characters",
+      "order": 10
+    },
+    "garden-flora": {
+      "name": "Garden Flora",
+      "order": 40
+    },
+    "models": {
+      "name": "Models",
+      "order": 30
+    }
+  },
+  "bundles": {},
+  "assets": {
+    "assets/models/beast-boy.glb": {
+      "path": "/manus-storage/game/sha256/350505702641c465613b25a3f60bb73a2312af1a23e1538aa55a3adcaa8c01e6.glb",
+      "sha256": "sha256:350505702641c465613b25a3f60bb73a2312af1a23e1538aa55a3adcaa8c01e6",
+      "size": 2998620,
+      "assetType": "model",
+      "groupId": "characters"
+    },
+    "assets/models/raven.glb": {
+      "path": "/manus-storage/game/sha256/7c595c7d72ff047a0543b007633442ee926f85bdbb4ba2136fc447db1224ebdf.glb",
+      "sha256": "sha256:7c595c7d72ff047a0543b007633442ee926f85bdbb4ba2136fc447db1224ebdf",
+      "size": 2273648,
+      "assetType": "model",
+      "groupId": "characters"
+    },
+    "assets/models/snowball.glb": {
+      "path": "/manus-storage/game/sha256/766e2d15ef6086d401a900f4f190e9426c0c908bde757a55ca40a6b66df8b31c.glb",
+      "sha256": "sha256:766e2d15ef6086d401a900f4f190e9426c0c908bde757a55ca40a6b66df8b31c",
+      "size": 3403604,
+      "assetType": "model",
+      "groupId": "characters"
+    },
+    "assets/models/tulip-optimized.glb": {
+      "path": "/manus-storage/game/sha256/4f7d69c03602c457d9fd3536bcb0c3a6c954f6ddf62693850a4435696255c4a1.glb",
+      "sha256": "sha256:4f7d69c03602c457d9fd3536bcb0c3a6c954f6ddf62693850a4435696255c4a1",
+      "size": 2512916,
+      "assetType": "model",
+      "groupId": "garden-flora"
+    },
+    "assets/models/tulip.glb": {
+      "path": "/manus-storage/game/sha256/889a6953f95afb695c198d40f3d1a8dab8af92b8a94c6ad618678429555a6d26.glb",
+      "sha256": "sha256:889a6953f95afb695c198d40f3d1a8dab8af92b8a94c6ad618678429555a6d26",
+      "size": 8429748,
+      "assetType": "model",
+      "groupId": "garden-flora"
+    },
+    "assets/share/favicon.png": {
+      "path": "/manus-storage/game/sha256/d6ae5ffc19d7df7b601d8cefd8ed0918d972234c1cbe1fc7baa6482307689bd4.png",
+      "sha256": "sha256:d6ae5ffc19d7df7b601d8cefd8ed0918d972234c1cbe1fc7baa6482307689bd4",
+      "size": 33469,
+      "assetType": "image",
+      "groupId": "branding"
+    }
+  }
+}

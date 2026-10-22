@@ -1,0 +1,8 @@
+Tulip Hollow — source working-tree snapshot
+Created: 2026-10-21
+
+This editable archive captures the current tested local working tree, including source code, project configuration, lockfiles, licenses, tests, scripts, and runtime assets. It excludes Git history, installed dependencies, generated dist output, screenshots, environment files, and caches.
+
+This is a working-tree snapshot, not a canonical Manus Git checkpoint or a published deployment. The game was verified in the source workspace with TypeScript checks, 45 unit tests, a production build, and the desktop/mobile smoke suite. The archive itself was not extracted and retested.
+
+To install and rebuild, use pnpm install --frozen-lockfile, then pnpm build. Run pnpm test for unit tests and pnpm smoke after a build for the browser smoke suite.
