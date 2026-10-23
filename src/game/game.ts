@@ -13,7 +13,7 @@ import { collect, createRun, damage, tick, type RunState } from './rules'
 import { createSnowball, fitCharacterModel } from './characters'
 import { ForestLevel, type ForestPrompt } from './forest-level'
 import { advanceLetterQuest, INITIAL_LETTER_QUEST_STATE, type LetterQuestState } from './letter-quest'
-import { World } from './world'
+import { World, type BeastBoyMovements } from './world'
 
 export type Mode = 'attract' | 'playing' | 'paused' | 'ended'
 export type Hint = 'move' | 'look' | 'jump' | 'dash' | 'talk' | 'pick' | 'feed' | 'swing' | 'edge' | 'garden' | 'cores' | 'letter' | 'door' | ForestPrompt
@@ -72,10 +72,10 @@ export class Game {
     private readonly input: Input,
     private readonly audio: Audio,
     private readonly hooks: GameHooks,
-    models: { raven?: THREE.Object3D; ravenMovements?: RavenModels; snowball?: THREE.Object3D; beastBoy?: THREE.Object3D; tulip?: THREE.Object3D } = {},
+    models: { raven?: THREE.Object3D; ravenMovements?: RavenModels; snowball?: THREE.Object3D; beastBoy?: THREE.Object3D; beastBoyMovements?: BeastBoyMovements; tulip?: THREE.Object3D } = {},
   ) {
     this.physics = new Physics(CONFIG.player.gravity)
-    this.world = new World(this.physics, renderer.shadowMapSize, models.beastBoy, models.tulip)
+    this.world = new World(this.physics, renderer.shadowMapSize, models.beastBoy, models.tulip, models.beastBoyMovements)
     this.forest = new ForestLevel(this.physics, renderer.shadowMapSize)
     this.player = new Player(this.physics, this.world.spawn, this.world.movers, models.raven, models.ravenMovements)
     this.player.setPose('sitting')
@@ -272,7 +272,7 @@ export class Game {
         nearbyKind = 'feed'
       }
     }
-    if (npcDistance < 5.4 && npcDistance < nearestDistance) {
+    if (!this.world.isGardenEscortActive && npcDistance < 5.4 && npcDistance < nearestDistance) {
       nearestDistance = npcDistance
       nearbyKind = 'talk'
     }
@@ -329,6 +329,13 @@ export class Game {
       this.transitionRemaining -= frameSeconds
       if (this.transitionRemaining <= 0) {
         this.activateLevel('garden')
+        this.world.startGardenEscort()
+        this.audio.play('ui')
+        this.hooks.popup(
+          'Beast Boy is waiting to guide you to the cottage.',
+          this.project(new THREE.Vector3(0, 2.2, 14.5)),
+          'score',
+        )
         this.hooks.quest(this.letterQuest === 'LETTER_READ' ? 'quest.letter.done' : 'quest.letter.find')
         this.hooks.location('hud.location')
         this.hooks.forestMode(false)
