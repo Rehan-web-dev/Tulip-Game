@@ -15,7 +15,10 @@ const MODEL_URLS = {
   ravenSitting: new URL('../assets/Raven Movements/raven1_sitting.glb', import.meta.url).href,
   ravenRunning: new URL('../assets/Raven Movements/raven1_running.glb', import.meta.url).href,
   snowball: new URL('../assets/models/snowball.glb', import.meta.url).href,
-  beastBoy: new URL('../assets/models/beast-boy.glb', import.meta.url).href,
+  beastBoyIdle: new URL('../assets/Beast Boy Movements/beastboy_idle.glb', import.meta.url).href,
+  beastBoyWalking: new URL('../assets/Beast Boy Movements/walking.glb', import.meta.url).href,
+  beastBoyWaving: new URL('../assets/Beast Boy Movements/waving.glb', import.meta.url).href,
+  beastBoyClapping: new URL('../assets/Beast Boy Movements/clapping.glb', import.meta.url).href,
   tulip: new URL('../assets/models/tulip-optimized.glb', import.meta.url).href,
 }
 const AUDIO_URLS = {
@@ -114,13 +117,16 @@ async function boot(): Promise<void> {
       return undefined
     }
   }
-  const [ravenModel, ravenWalkingModel, ravenSittingModel, ravenRunningModel, snowballModel, beastBoyModel, tulipModel] = await Promise.all([
+  const [ravenModel, ravenWalkingModel, ravenSittingModel, ravenRunningModel, snowballModel, beastBoyIdleModel, beastBoyWalkingModel, beastBoyWavingModel, beastBoyClappingModel, tulipModel] = await Promise.all([
     loadModel('Raven', MODEL_URLS.raven),
     loadModel('Raven walking movement', MODEL_URLS.ravenWalking),
     loadModel('Raven sitting movement', MODEL_URLS.ravenSitting),
     loadModel('Raven running movement', MODEL_URLS.ravenRunning),
     loadModel('Snowball', MODEL_URLS.snowball),
-    loadModel('Beast Boy', MODEL_URLS.beastBoy),
+    loadModel('Beast Boy idle model and movement', MODEL_URLS.beastBoyIdle),
+    loadModel('Beast Boy walking movement', MODEL_URLS.beastBoyWalking),
+    loadModel('Beast Boy waving movement', MODEL_URLS.beastBoyWaving),
+    loadModel('Beast Boy clapping movement', MODEL_URLS.beastBoyClapping),
     loadModel('the supplied tulip', MODEL_URLS.tulip),
   ])
   removeAssetProgress()
@@ -130,7 +136,7 @@ async function boot(): Promise<void> {
     ravenSitting: ravenSittingModel !== undefined,
     ravenRunning: ravenRunningModel !== undefined,
     snowball: snowballModel !== undefined,
-    beastBoy: beastBoyModel !== undefined,
+    beastBoy: beastBoyIdleModel !== undefined,
     tulip: tulipModel !== undefined,
   }
   const loadSound = async (name: string, url: string): Promise<AudioBuffer | undefined> => {
@@ -182,7 +188,13 @@ async function boot(): Promise<void> {
       standing: ravenModel?.animations,
     },
     snowball: snowballModel?.scene,
-    beastBoy: beastBoyModel?.scene,
+    beastBoy: beastBoyIdleModel?.scene,
+    beastBoyMovements: {
+      idle: beastBoyIdleModel?.animations,
+      walking: beastBoyWalkingModel?.animations,
+      waving: beastBoyWavingModel?.animations,
+      clapping: beastBoyClappingModel?.animations,
+    },
     tulip: tulipModel?.scene,
   })
   game.reducedMotion = save.data.reducedMotion

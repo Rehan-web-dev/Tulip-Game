@@ -21,6 +21,8 @@ export type TulipPlacement = { x: number; z: number; rotation: number; scale: nu
 type InstanceSlot = { mesh: THREE.InstancedMesh; index: number }
 type PickableTulip = { position: THREE.Vector3; placement: TulipPlacement; slots: InstanceSlot[]; picked: boolean }
 type FallingLeaf = { mesh: THREE.Mesh; origin: THREE.Vector3; phase: number; speed: number; material: THREE.MeshStandardMaterial }
+type GardenEscortPhase = 'idle' | 'welcome' | 'guiding' | 'arrived'
+export type BeastBoyMovements = Partial<Record<'idle' | 'walking' | 'waving' | 'clapping', THREE.AnimationClip[]>>
 
 const GARDEN_PATHS = [
   { x: 0, z: -3, width: 4.5, length: 34, angle: 0 },
@@ -127,9 +129,22 @@ export class World {
   private houseDoorOpen = false
   private houseDoorTarget = 0
   private houseDoorWasInside = false
+  private gardenEscortPhase: GardenEscortPhase = 'idle'
+  private gardenEscortElapsed = 0
+  private gardenEscortIndex = 0
+  private readonly beastBoyMixer?: THREE.AnimationMixer
+  private readonly beastBoyActions = new Map<keyof BeastBoyMovements, THREE.AnimationAction>()
+  private activeBeastBoyMovement?: keyof BeastBoyMovements
+  private readonly beastBoyFillLight: THREE.PointLight
+  private readonly gardenEscortRoute = [
+    new THREE.Vector3(0, 0, 8),
+    new THREE.Vector3(0, 0, -3),
+    new THREE.Vector3(0, 0, -13),
+    new THREE.Vector3(-5.8, 0, -17.2),
+  ]
   readonly swingSeatPosition = new THREE.Vector3(7.65, 1.95, -21.62)
 
-  constructor(private readonly physics: Physics, shadowMapSize: number, beastBoyModel?: THREE.Object3D, tulipModel?: THREE.Object3D) {
+  constructor(private readonly physics: Physics, shadowMapSize: number, beastBoyModel?: THREE.Object3D, tulipModel?: THREE.Object3D, beastBoyMovements: BeastBoyMovements = {}) {
     const random = seeded(240816)
     this.scene.background = new THREE.Color('#080d21')
     this.scene.fog = new THREE.Fog('#172541', 76, 158)
@@ -173,9 +188,26 @@ export class World {
     this.scene.add(this.drones.group)
 
     this.npc = beastBoyModel ? fitCharacterModel(beastBoyModel, 1.85, 'floor') : createBeastBoy()
+    const beastBoyVisual = this.npc.children[0]
+    if (beastBoyVisual) {
+      // The supplied idle rig keeps a root-bone height offset. Compensate on the
+      // visual wrapper so the animated skeleton remains intact and feet stay grounded.
+      beastBoyVisual.position.y -= 0.9
+    }
+    if (Object.values(beastBoyMovements).some(clips => clips && clips.length > 0)) {
+      this.beastBoyMixer = new THREE.AnimationMixer(beastBoyVisual ?? this.npc)
+      for (const movement of ['idle', 'walking', 'waving', 'clapping'] as const) {
+        const clip = beastBoyMovements[movement]?.[0]
+        if (clip) this.beastBoyActions.set(movement, this.beastBoyMixer.clipAction(clip))
+      }
+      this.playBeastBoyMovement('idle')
+    }
     this.npc.position.copy(this.npcPosition)
     this.npc.rotation.y = Math.PI
     this.scene.add(this.npc)
+    this.beastBoyFillLight = new THREE.PointLight('#d8b8ff', 0.75, 5.5, 2)
+    this.beastBoyFillLight.position.set(0.8, 1.25, -0.8)
+    this.npc.add(this.beastBoyFillLight)
     const label = this.makeNameTag('BEAST BOY')
     label.position.set(0, 2.1, 0)
     this.npc.add(label)
@@ -183,6 +215,7 @@ export class World {
 
   update(dt: number, focus: THREE.Vector3): void {
     this.elapsed += dt
+    this.beastBoyMixer?.update(dt)
     this.collectibles.animate(dt)
     this.drones.animate(dt, this.droneRage)
     const insideHouse = Math.abs(focus.x) < 4.55 && focus.z > -26.5 && focus.z < -19.55
@@ -226,7 +259,7 @@ export class World {
     this.sun.position.set(focus.x - 18, focus.y + 34, focus.z + 12)
     this.sun.target.position.copy(focus)
     this.nightSky.position.set(focus.x, 0, focus.z)
-    this.npc.position.y = Math.sin(this.elapsed * 2.1) * 0.035
+    this.updateGardenEscort(dt, focus)
     this.houseDoor.rotation.y += (this.houseDoorTarget - this.houseDoor.rotation.y) * Math.min(1, dt * 8)
     for (const bunny of this.rabbits) {
       const t = this.elapsed * bunny.speed + bunny.phase
@@ -340,6 +373,31 @@ export class World {
     this.swingOccupied = occupied
   }
 
+  startGardenEscort(): void {
+    this.gardenEscortPhase = 'welcome'
+    this.gardenEscortElapsed = 0
+    this.gardenEscortIndex = 0
+    this.npc.position.set(0, 0, 14.5)
+    this.npc.rotation.y = Math.PI
+    this.scene.userData.gardenEscortPhase = this.gardenEscortPhase
+    this.playBeastBoyMovement('waving')
+  }
+
+  resetGardenEscort(): void {
+    this.gardenEscortPhase = 'idle'
+    this.gardenEscortElapsed = 0
+    this.gardenEscortIndex = 0
+    this.npcPosition.set(-8, 0, -8)
+    this.npc.position.copy(this.npcPosition)
+    this.npc.rotation.y = Math.PI
+    this.scene.userData.gardenEscortPhase = this.gardenEscortPhase
+    this.playBeastBoyMovement('idle')
+  }
+
+  get isGardenEscortActive(): boolean {
+    return this.gardenEscortPhase === 'welcome' || this.gardenEscortPhase === 'guiding'
+  }
+
   markBirthdayLetterRead(): void {
     this.scene.userData.birthdayLetterRead = true
     if (this.letterMarker) this.letterMarker.visible = false
@@ -357,7 +415,75 @@ export class World {
     this.droneRage = false
     if (this.houseDoorOpen) this.toggleHouseDoor()
     this.houseDoorWasInside = false
+    this.resetGardenEscort()
     this.scene.userData.collectiblesRemaining = this.collectibles.total
+  }
+
+  private updateGardenEscort(dt: number, focus: THREE.Vector3): void {
+    if (this.gardenEscortPhase === 'idle' || this.gardenEscortPhase === 'arrived') {
+      if (this.gardenEscortPhase === 'arrived') {
+        this.gardenEscortElapsed += dt
+        if (this.gardenEscortElapsed >= 1.8) this.playBeastBoyMovement('idle')
+      }
+      this.npc.position.y = Math.sin(this.elapsed * 2.1) * 0.035
+      this.npcPosition.set(this.npc.position.x, 0, this.npc.position.z)
+      return
+    }
+    this.gardenEscortElapsed += dt
+    this.npc.position.y = Math.sin(this.elapsed * 7.5) * 0.025
+    if (this.gardenEscortPhase === 'welcome') {
+      this.npc.position.y = Math.sin(this.elapsed * 2.1) * 0.035
+      if (this.gardenEscortElapsed < 2.4) {
+        this.npc.lookAt(focus.x, this.npc.position.y, focus.z)
+        this.npcPosition.set(this.npc.position.x, 0, this.npc.position.z)
+        return
+      }
+      this.gardenEscortPhase = 'guiding'
+      this.scene.userData.gardenEscortPhase = this.gardenEscortPhase
+      this.playBeastBoyMovement('walking')
+    }
+
+    const target = this.gardenEscortRoute[this.gardenEscortIndex]
+    if (!target) {
+      this.gardenEscortPhase = 'arrived'
+      this.gardenEscortElapsed = 0
+      this.scene.userData.gardenEscortPhase = this.gardenEscortPhase
+      this.npc.position.set(-5.8, 0, -17.2)
+      this.npc.rotation.y = Math.PI * 0.5
+      this.npcPosition.set(this.npc.position.x, 0, this.npc.position.z)
+      this.playBeastBoyMovement('clapping')
+      return
+    }
+    const distanceToRaven = Math.hypot(focus.x - this.npc.position.x, focus.z - this.npc.position.z)
+    const distanceToTarget = Math.hypot(target.x - this.npc.position.x, target.z - this.npc.position.z)
+    if (distanceToTarget < 0.45) {
+      this.gardenEscortIndex += 1
+      return
+    }
+    // Keep the guide a short distance ahead so the player can comfortably follow.
+    if (distanceToRaven > 8.5) {
+      this.npc.position.y = Math.sin(this.elapsed * 2.1) * 0.035
+      this.npc.lookAt(focus.x, this.npc.position.y, focus.z)
+      return
+    }
+    const direction = new THREE.Vector3(target.x - this.npc.position.x, 0, target.z - this.npc.position.z).normalize()
+    const speed = 2.25
+    this.npc.position.x += direction.x * speed * dt
+    this.npc.position.z += direction.z * speed * dt
+    this.npc.rotation.y = Math.atan2(direction.x, direction.z)
+    this.npcPosition.set(this.npc.position.x, 0, this.npc.position.z)
+  }
+
+  private playBeastBoyMovement(movement: keyof BeastBoyMovements): void {
+    if (this.activeBeastBoyMovement === movement) return
+    const next = this.beastBoyActions.get(movement)
+    if (!next) return
+    const previous = this.activeBeastBoyMovement ? this.beastBoyActions.get(this.activeBeastBoyMovement) : undefined
+    next.reset().setLoop(movement === 'waving' || movement === 'clapping' ? THREE.LoopOnce : THREE.LoopRepeat, movement === 'waving' || movement === 'clapping' ? 1 : Infinity)
+    next.clampWhenFinished = movement === 'waving' || movement === 'clapping'
+    next.play()
+    if (previous) previous.crossFadeTo(next, 0.2, true)
+    this.activeBeastBoyMovement = movement
   }
 
   private makeNightSky(random: () => number): THREE.Group {
